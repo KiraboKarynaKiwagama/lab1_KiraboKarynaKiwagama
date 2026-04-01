@@ -2,12 +2,17 @@ import csv
 import sys
 import os
 
+
 def load_csv_data():
-    filename = input("Enter the name of the CSV file to process (e.g., grades.csv): ")
+    filename = input( "Enter the name of the CSV file to process (e.g., grades.csv): ")
+
+    # Exit cleanly before attempting to open a file that isn't there.
     if not os.path.exists(filename):
         print(f"Error: The file '{filename}' was not found.")
         sys.exit(1)
+
     assignments = []
+
     try:
         with open(filename, mode='r', encoding='utf-8') as file:
             reader = csv.DictReader(file)
@@ -19,10 +24,13 @@ def load_csv_data():
                     'weight': float(row['weight'])
                 })
         return assignments
+
     except Exception as e:
+        #this will catch anything unexpected like corrupted or missing files
         print(f"An error occurred while reading the file: {e}")
         sys.exit(1)
 
+#this block will run the validation, calculate scores and GPA, determines the pass or fail, and prints the transcript
 def evaluate_grades(data):
     print("\n--- Processing Grades ---")
 
@@ -30,13 +38,13 @@ def evaluate_grades(data):
         print("Error: No grade data found. The file may be empty.")
         sys.exit(1)
 
-    # a) Validate scores
+    # Validate scores
     for item in data:
         if item['score'] < 0 or item['score'] > 100:
             print(f"ERROR: '{item['assignment']}' has invalid score: {item['score']}")
             sys.exit(1)
 
-    # b) Validate weights
+    # Validate weights
     total_weight = 0
     formative_weight_total = 0
     summative_weight_total = 0
@@ -60,12 +68,13 @@ def evaluate_grades(data):
 
     print("All validations passed.")
 
-    # c) Calculate grades
+    # Calculate grades
     final_grade = 0
     formative_score = 0
     summative_score = 0
 
     for item in data:
+        # weighted contribution of this single assignment towards the final grade
         contribution = (item['score'] / 100) * item['weight']
         final_grade += contribution
         if item['group'] == 'Formative':
@@ -73,14 +82,15 @@ def evaluate_grades(data):
         elif item['group'] == 'Summative':
             summative_score += contribution
 
+    #GPA calculation
     gpa = (final_grade / 100) * 5.0
     formative_percentage = (formative_score / 60) * 100
     summative_percentage = (summative_score / 40) * 100
 
-    # d) Pass/Fail
+    # Pass/Fail checker
     passed = formative_percentage >= 50 and summative_percentage >= 50
 
-    # e) Resubmission logic
+    # Resubmission checker that flags the weight
     failed_formatives = []
     for item in data:
         if item['group'] == 'Formative' and item['score'] < 50:
@@ -96,16 +106,16 @@ def evaluate_grades(data):
         if item['weight'] == highest_weight:
             resubmit.append(item)
 
-    # f) Print results
+    # Print results
     print(f"\nFormative Score:  {formative_percentage:.2f}%")
     print(f"Summative Score:  {summative_percentage:.2f}%")
     print(f"Final Grade:      {final_grade:.2f}%")
     print(f"GPA:              {gpa:.2f} / 5.0")
 
     if passed:
-        print("\nStatus: PASSED")
+        print("\n Academic Status: PASSED")
     else:
-        print("\nStatus: FAILED")
+        print("\n Academic Status: FAILED")
 
     if failed_formatives:
         print("\nFailed Formative Assignments:")
